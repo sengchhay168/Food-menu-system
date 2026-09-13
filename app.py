@@ -227,26 +227,162 @@ def clear_day_db(day):
 # ============================================================
 st.markdown("""
     <style>
-    .main {
-        background-color: #f8f9fa;
+    @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap');
+
+    :root {
+        --ink: #2B2622;
+        --paper: #F5F1E4;
+        --panel: #EDE6D3;
+        --terracotta: #A6553C;
+        --terracotta-dark: #7E3E2C;
+        --leaf: #3F5D45;
+        --gold: #C68A3D;
+        --chili: #8C2F2F;
     }
-    h1, h2, h3 {
-        color: #1e293b;
-        font-family: 'Helvetica Neue', sans-serif;
+
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
+    p, li, label, span, div, h1, h2, h3, h4, h5, h6,
+    button, input, textarea, select,
+    [data-testid="stMarkdownContainer"] {
+        font-family: 'Kantumruy Pro', sans-serif;
     }
+
+    /* Don't let the font override above break Streamlit's own icon glyphs
+       (e.g. the sidebar collapse arrow), which rely on a ligature icon font. */
+    [data-testid="stIconMaterial"],
+    .material-symbols-rounded,
+    .material-symbols-outlined,
+    [class*="material-symbols"] {
+        font-family: 'Material Symbols Rounded' !important;
+    }
+
+    .main, [data-testid="stAppViewContainer"] {
+        background-color: var(--paper);
+        background-image: radial-gradient(rgba(43, 38, 34, 0.045) 1px, transparent 1px);
+        background-size: 18px 18px;
+    }
+
+    [data-testid="stSidebar"] {
+        background-color: var(--panel);
+        border-right: 1px solid rgba(43, 38, 34, 0.08);
+    }
+
+    h1, h2, h3, h4 {
+        color: var(--ink);
+        font-family: 'Kantumruy Pro', sans-serif;
+        font-weight: 700;
+        letter-spacing: 0;
+    }
+
+    /* ---------- Hero header ---------- */
+    .kitchen-hero {
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: 14px;
+        padding: 0 40px 30px 40px;
+        margin-bottom: 28px;
+        position: relative;
+        overflow: hidden;
+    }
+    .kitchen-hero__weave {
+        height: 10px;
+        width: 100%;
+        background-image: repeating-linear-gradient(
+            135deg,
+            var(--gold) 0px, var(--gold) 8px,
+            transparent 8px, transparent 16px
+        );
+        opacity: 0.55;
+        margin-bottom: 26px;
+    }
+    .kitchen-hero__body {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 24px;
+    }
+    .kitchen-hero__pot {
+        flex-shrink: 0;
+        opacity: 0.9;
+    }
+    .kitchen-hero__rule {
+        border: none;
+        border-top: 2px solid var(--gold);
+        border-bottom: 1px solid rgba(198, 138, 61, 0.4);
+        height: 3px;
+        width: 64px;
+        margin: 0 0 18px 0;
+    }
+    .kitchen-hero__title {
+        font-size: 34px;
+        font-weight: 700;
+        margin: 0 0 10px 0;
+        color: #FBF8F0;
+    }
+    .kitchen-hero__subtitle {
+        font-size: 15.5px;
+        line-height: 1.6;
+        color: #D9D2C2;
+        max-width: 640px;
+        margin: 0;
+    }
+
+    /* ---------- Tabs ---------- */
+    [data-baseweb="tab-list"] {
+        gap: 6px;
+        border-bottom: 1px solid rgba(43, 38, 34, 0.12);
+    }
+    [data-baseweb="tab"] {
+        font-weight: 600;
+        color: #6B6355;
+    }
+    [data-baseweb="tab"][aria-selected="true"] {
+        color: var(--terracotta-dark);
+    }
+    [data-baseweb="tab-highlight"] {
+        background-color: var(--terracotta) !important;
+    }
+
+    /* ---------- Buttons ---------- */
+    div.stButton > button, div[data-testid="stFormSubmitButton"] > button {
+        background-color: var(--terracotta);
+        color: #FBF8F0;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.5rem 1.1rem;
+        transition: background-color 0.15s ease;
+    }
+    div.stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
+        background-color: var(--terracotta-dark);
+        color: #FBF8F0;
+    }
+
+    /* ---------- Recipe cards ---------- */
     .recipe-card {
-        background-color: #ffffff;
-        padding: 24px;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        background-color: #FFFDF8;
+        padding: 24px 26px;
+        border-radius: 10px;
+        border: 1px solid rgba(43, 38, 34, 0.08);
+        border-left: 4px solid var(--terracotta);
+        box-shadow: 0 2px 10px rgba(43, 38, 34, 0.06);
         margin-bottom: 20px;
-        border: 1px solid #e2e8f0;
     }
+    .recipe-card h3 {
+        margin-top: 0;
+    }
+    .recipe-divider {
+        border: none;
+        border-top: 1px solid rgba(43, 38, 34, 0.1);
+        margin: 14px 0;
+    }
+
+    /* ---------- Badges ---------- */
     .badge-category {
-        background-color: #f3e8ff;
-        color: #7e22ce;
+        background-color: rgba(63, 93, 69, 0.12);
+        color: var(--leaf);
         padding: 6px 12px;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         display: inline-block;
@@ -254,10 +390,10 @@ st.markdown("""
         margin-bottom: 4px;
     }
     .badge-meat {
-        background-color: #e0f2fe;
-        color: #0369a1;
+        background-color: rgba(166, 85, 60, 0.12);
+        color: var(--terracotta-dark);
         padding: 6px 12px;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         display: inline-block;
@@ -265,10 +401,10 @@ st.markdown("""
         margin-bottom: 4px;
     }
     .badge-diff-Easy {
-        background-color: #dcfce7;
-        color: #15803d;
+        background-color: rgba(63, 93, 69, 0.14);
+        color: var(--leaf);
         padding: 6px 12px;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         display: inline-block;
@@ -276,10 +412,10 @@ st.markdown("""
         margin-bottom: 4px;
     }
     .badge-diff-Medium {
-        background-color: #fef9c3;
-        color: #a16207;
+        background-color: rgba(198, 138, 61, 0.18);
+        color: #8A5D22;
         padding: 6px 12px;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         display: inline-block;
@@ -287,10 +423,10 @@ st.markdown("""
         margin-bottom: 4px;
     }
     .badge-diff-Hard {
-        background-color: #fee2e2;
-        color: #b91c1c;
+        background-color: rgba(140, 47, 47, 0.12);
+        color: var(--chili);
         padding: 6px 12px;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         display: inline-block;
@@ -298,14 +434,64 @@ st.markdown("""
         margin-bottom: 4px;
     }
     .badge-time {
-        background-color: #f3f4f6;
-        color: #374151;
+        background-color: rgba(43, 38, 34, 0.07);
+        color: #4A443C;
         padding: 6px 12px;
-        border-radius: 20px;
+        border-radius: 8px;
         font-size: 12px;
         font-weight: 600;
         display: inline-block;
         margin-bottom: 4px;
+    }
+
+    /* ---------- Alerts ---------- */
+    [data-testid="stAlert"] {
+        border-radius: 8px;
+    }
+
+    /* ---------- No-image placeholder ---------- */
+    .no-image-box {
+        background-color: rgba(43, 38, 34, 0.04);
+        border: 1px dashed rgba(43, 38, 34, 0.2);
+        border-radius: 10px;
+        padding: 28px 10px;
+        text-align: center;
+        font-size: 26px;
+        color: #A69D8B;
+    }
+    .no-image-box span {
+        display: block;
+        font-size: 12px;
+        margin-top: 6px;
+        color: #8A8172;
+    }
+
+    /* ---------- Forms as quiet cards ---------- */
+    [data-testid="stForm"] {
+        background-color: #FFFDF8;
+        border: 1px solid rgba(43, 38, 34, 0.1);
+        border-radius: 10px;
+        padding: 22px 24px 8px 24px;
+    }
+
+    /* ---------- Bordered containers (weekly planner day cards) ---------- */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border-radius: 10px !important;
+        border-color: rgba(43, 38, 34, 0.12) !important;
+        background-color: #FFFDF8;
+    }
+
+    /* ---------- Inputs ---------- */
+    div[data-baseweb="select"] > div,
+    div[data-baseweb="input"] > div,
+    textarea {
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="select"]:focus-within > div,
+    div[data-baseweb="input"]:focus-within > div,
+    textarea:focus {
+        border-color: var(--terracotta) !important;
+        box-shadow: 0 0 0 1px var(--terracotta) !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -364,6 +550,7 @@ LANG = {
         "confirm_delete": "Are you sure you want to delete this recipe? This cannot be undone.",
         "yes_delete": "Yes, delete it",
         "cancel": "Cancel",
+        "saved": "Saved",
     },
     "Khmer (ភាសាខ្មែរ)": {
         "title": "🍲 ផ្ទះបាយប្រចាំថ្ងៃរបស់ម៉ាក់",
@@ -415,6 +602,7 @@ LANG = {
         "confirm_delete": "តើអ្នកប្រាកដថាចង់លុបមុខម្ហូបនេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។",
         "yes_delete": "បាទ/ចាស លុបវា",
         "cancel": "បោះបង់",
+        "saved": "បានរក្សាទុក",
     }
 }
 
@@ -423,9 +611,9 @@ LANG = {
 # ============================================================
 with st.sidebar:
     components.html("""
-        <div style="background: #ffffff; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-            <p style="margin: 0; font-size: 11px; color: #64748b; font-weight: 700; letter-spacing: 0.5px;">🕒 TIME / ម៉ោង</p>
-            <div id="live-clock" style="font-size: 16px; font-weight: bold; color: #1e293b; font-family: monospace; margin-top: 4px;"></div>
+        <div style="background: #FFFDF8; padding: 14px; border-radius: 10px; text-align: center; border: 1px solid rgba(43,38,34,0.1); border-top: 2px solid #C68A3D;">
+            <p style="margin: 0; font-size: 12px; color: #6B6355; font-family: 'Kantumruy Pro', sans-serif;">Time now / ម៉ោងឥឡូវនេះ</p>
+            <div id="live-clock" style="font-size: 17px; font-weight: 700; color: #2B2622; font-family: 'Kantumruy Pro', sans-serif; margin-top: 4px;"></div>
         </div>
         <script>
         function updateClock() {
@@ -464,9 +652,27 @@ CATEGORY_OPTIONS = ["ប្រភេទ ឆា (Stir-Fried)", "ប្រភេ�
 MEAT_OPTIONS = ["សាច់ជ្រូក (Pork)", "សាច់មាន់ (Chicken)", "សាច់គោ (Beef)", "ត្រី / គ្រឿងសមុទ្រ (Fish / Seafood)", "បន្លែ / គ្មានសាច់ (Vegetarian / Other)"]
 
 # App Header / Hero Section
-st.title(t["title"])
-st.markdown(t["subtitle"])
-st.divider()
+st.markdown(f"""
+    <div class="kitchen-hero">
+        <div class="kitchen-hero__weave"></div>
+        <div class="kitchen-hero__body">
+            <div>
+                <hr class="kitchen-hero__rule" />
+                <p class="kitchen-hero__title">{html.escape(t["title"])}</p>
+                <p class="kitchen-hero__subtitle">{html.escape(t["subtitle"])}</p>
+            </div>
+            <svg class="kitchen-hero__pot" width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M14 30 Q10 52 24 58 Q36 62 48 58 Q62 52 58 30" stroke="#C68A3D" stroke-width="2.2" stroke-linecap="round"/>
+                <ellipse cx="36" cy="30" rx="24" ry="5" stroke="#C68A3D" stroke-width="2.2"/>
+                <path d="M12 27 Q8 27 8 22" stroke="#C68A3D" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M60 27 Q64 27 64 22" stroke="#C68A3D" stroke-width="2.2" stroke-linecap="round"/>
+                <path d="M28 16 Q25 10 29 5" stroke="#D9D2C2" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+                <path d="M38 16 Q35 9 39 3" stroke="#D9D2C2" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                <path d="M47 16 Q44 10 48 5" stroke="#D9D2C2" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+            </svg>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 # Navigation Tabs
 tab1, tab2, tab3, tab4, tab5 = st.tabs([t["tab1"], t["tab2"], t["tab3"], t["tab4"], t["tab5"]])
@@ -507,7 +713,10 @@ with tab1:
                         img = Image.open(io.BytesIO(recipe["image"]))
                         st.image(img, use_container_width=True)
                     else:
-                        st.markdown(f"🖼️ *{t['no_image']}*")
+                        st.markdown(
+                            f'<div class="no-image-box">🍽️<br><span>{html.escape(t["no_image"])}</span></div>',
+                            unsafe_allow_html=True,
+                        )
 
                 with rc_col2:
                     st.markdown(f"### {html.escape(recipe['name'])}")
@@ -519,7 +728,7 @@ with tab1:
                     diff_badge = f'<span class="badge-diff-{recipe["difficulty"]}">⚡ {html.escape(recipe["difficulty"])}</span>'
                     time_badge = f'<span class="badge-time">⏱️ {html.escape(recipe["time"])}</span>'
                     st.markdown(f"{cat_badge} {meat_badges} {diff_badge} {time_badge}", unsafe_allow_html=True)
-                    st.markdown("<br>", unsafe_allow_html=True)
+                    st.markdown("<hr class='recipe-divider' />", unsafe_allow_html=True)
                     st.markdown(f"**{t['ingredients']}:**\n{recipe['ingredients']}")
 
                 st.markdown('</div>', unsafe_allow_html=True)
@@ -552,12 +761,22 @@ with tab2:
     col_days = st.columns(2)
 
     for idx, day in enumerate(DAYS):
+        # A per-day "generation" counter. Bumping this changes the selectbox
+        # keys below, which forces Streamlit to treat them as brand-new
+        # widgets with no memory of the previous pick — the reliable way to
+        # force a dropdown back to blank, since just clearing session_state
+        # for the old key isn't always enough on its own.
+        reset_key = f"planner_gen_{day}"
+        if reset_key not in st.session_state:
+            st.session_state[reset_key] = 0
+
         with col_days[idx % 2]:
-            with st.container():
+            with st.container(border=True):
                 st.markdown(f"### 🗓️ {day_display_map[day]}")
 
                 if st.button(f"🧹 {t['clear_day']}", key=f"clear_btn_{day}"):
                     clear_day_db(day)
+                    st.session_state[reset_key] += 1
                     st.success(f"Cleared {day_display_map[day]}!")
                     st.rerun()
 
@@ -573,11 +792,12 @@ with tab2:
                         recipe_options,
                         index=current_index,
                         format_func=format_recipe_option,
-                        key=f"{label_key}_{day}",
+                        key=f"{label_key}_{day}_{st.session_state[reset_key]}",
                     )
 
                     if new_value != current_value:
                         set_weekly_meal(day, meal_type, new_value)
+                        st.toast(f"✅ {t['saved']}", icon="✅")
                         st.rerun()
 
                 st.divider()
@@ -625,7 +845,10 @@ with tab3:
                             img = Image.open(io.BytesIO(recipe["image"]))
                             st.image(img, use_container_width=True)
                         else:
-                            st.markdown(f"🖼️ *{t['no_image']}*")
+                            st.markdown(
+                            f'<div class="no-image-box">🍽️<br><span>{html.escape(t["no_image"])}</span></div>',
+                            unsafe_allow_html=True,
+                        )
 
                     with rc_col2:
                         st.markdown(f"### {html.escape(recipe['name'])}")
@@ -639,7 +862,7 @@ with tab3:
                         time_badge = f'<span class="badge-time">⏱️ {html.escape(recipe["time"])}</span>'
                         st.markdown(f"{cat_badge} {meat_badges} {diff_badge} {time_badge}", unsafe_allow_html=True)
 
-                        st.markdown("<br>", unsafe_allow_html=True)
+                        st.markdown("<hr class='recipe-divider' />", unsafe_allow_html=True)
                         st.markdown(f"**{t['ingredients']}:**\n{recipe['ingredients']}")
 
                         # EDIT EXPANDER FOR EACH RECIPE
@@ -758,21 +981,22 @@ with tab5:
         st.markdown("### 📝 Master Deduplicated Shopping Table")
 
         html_table = (
-            '<table style="width:100%; border-collapse: collapse; background-color: #ffffff; border: 1px solid #e2e8f0; font-family: sans-serif; border-radius: 8px; overflow: hidden;">'
+            '<table style="width:100%; border-collapse: collapse; background-color: #FFFDF8; border: 1px solid rgba(43,38,34,0.1); font-family: \'Kantumruy Pro\', sans-serif; border-radius: 10px; overflow: hidden;">'
             '<thead>'
-            '<tr style="background-color: #f8f9fa; border-bottom: 2px solid #e2e8f0;">'
-            f'<th style="padding: 14px; text-align: center; width: 10%; color: #1e293b; font-weight: bold; border-right: 1px solid #e2e8f0;">{html.escape(t["tbl_no"])}</th>'
-            f'<th style="padding: 14px; text-align: left; width: 90%; color: #1e293b; font-weight: bold; padding-left: 20px;">{html.escape(t["tbl_ing"])}</th>'
+            '<tr style="background-color: #EDE6D3; border-bottom: 2px solid #C68A3D;">'
+            f'<th style="padding: 14px; text-align: center; width: 10%; color: #2B2622; font-weight: 700; border-right: 1px solid rgba(43,38,34,0.1);">{html.escape(t["tbl_no"])}</th>'
+            f'<th style="padding: 14px; text-align: left; width: 90%; color: #2B2622; font-weight: 700; padding-left: 20px;">{html.escape(t["tbl_ing"])}</th>'
             '</tr>'
             '</thead>'
             '<tbody>'
         )
 
         for idx, ing in enumerate(unique_ingredients, 1):
+            row_bg = "#FFFDF8" if idx % 2 else "#FBF7EE"
             html_table += (
-                '<tr style="border-bottom: 1px solid #e2e8f0;">'
-                f'<td style="padding: 12px; text-align: center; color: #334155; font-weight: 600; border-right: 1px solid #e2e8f0;">{idx}</td>'
-                f'<td style="padding: 12px; text-align: left; color: #334155; padding-left: 20px;">{html.escape(ing)}</td>'
+                f'<tr style="border-bottom: 1px solid rgba(43,38,34,0.08); background-color: {row_bg};">'
+                f'<td style="padding: 12px; text-align: center; color: #4A443C; font-weight: 600; border-right: 1px solid rgba(43,38,34,0.08);">{idx}</td>'
+                f'<td style="padding: 12px; text-align: left; color: #2B2622; padding-left: 20px;">{html.escape(ing)}</td>'
                 '</tr>'
             )
 
