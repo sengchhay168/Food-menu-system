@@ -1,0 +1,3 @@
+streamlit
+pillow
+psycopg2-binary
