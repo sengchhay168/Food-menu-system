@@ -221,10 +221,12 @@ LANG = {
         "weekly_sub": "Assign saved recipes to breakfast, lunch, and dinner for every day of the week.",
         "no_food_msg": "There's no food for that type of meat or cooking yet. Please go add some!",
         "shopping_header": "Weekly Grocery Shopping List",
-        "shopping_sub": "Automatically compiled ingredients based on your scheduled weekly meal plan.",
+        "shopping_sub": "Automatically compiled deduplicated ingredient list based on your scheduled weekly meal plan.",
         "no_shopping": "No meals scheduled in the weekly planner yet, so the shopping list is empty!",
         "save_day": "Save Plan",
-        "clear_day": "Finish & Clear Day"
+        "clear_day": "Finish & Clear Day",
+        "tbl_no": "No.",
+        "tbl_ing": "Ingredient"
     },
     "Khmer (ភាសាខ្មែរ)": {
         "title": "🍲 ផ្ទះបាយប្រចាំថ្ងៃរបស់ម៉ាក់",
@@ -268,10 +270,12 @@ LANG = {
         "weekly_sub": "កំណត់មុខម្ហូបសម្រាប់ពេលព្រឹក ថ្ងៃត្រង់ និងល្ងាចសម្រាប់ថ្ងៃនីមួយៗក្នុងសប្តាហ៍។",
         "no_food_msg": "មិនទាន់មានម្ហូបសម្រាប់ប្រភេទសាច់ ឬប្រភេទចម្អិននេះនៅឡើយទេ សូមអញ្ជើញទៅបន្ថែម!",
         "shopping_header": "បញ្ជីទិញទំនិញផ្សារប្រចាំសប្តាហ៍",
-        "shopping_sub": "គ្រឿងផ្សំត្រូវបានចងក្រងដោយស្វ័យប្រវត្តិយោងតាមកាលវិភាគប្រចាំសប្តាហ៍របស់អ្នក។",
+        "shopping_sub": "បញ្ជីគ្រឿងផ្សំសរុបដែលបានចម្រាញ់រួចត្រូវបានចងក្រងដោយស្វ័យប្រវត្តិយោងតាមកាលវិភាគរបស់អ្នក។",
         "no_shopping": "មិនទាន់មានមុខម្ហូបកំណត់ក្នុងកាលវិភាគប្រចាំសប្តាហ៍នៅឡើយទេ!",
         "save_day": "រក្សាទុកចូលក្នុងបញ្ជី",
-        "clear_day": "រួចរាល់ / សម្អាតថ្ងៃនេះ"
+        "clear_day": "រួចរាល់ / សម្អាតថ្ងៃនេះ",
+        "tbl_no": "ល.រ",
+        "tbl_ing": "គ្រឿងផ្សំ"
     }
 }
 
@@ -405,21 +409,27 @@ with tab2:
         b_key = f"breakfast_{day}"
         l_key = f"lunch_{day}"
         d_key = f"dinner_{day}"
-        clear_flag_key = f"clear_flag_{day}"
-        
-        if st.session_state.get(clear_flag_key, False):
-            st.session_state[b_key] = ""
-            st.session_state[l_key] = ""
-            st.session_state[d_key] = ""
-            st.session_state.weekly_plan[day]["Breakfast"] = ""
-            st.session_state.weekly_plan[day]["Lunch"] = ""
-            st.session_state.weekly_plan[day]["Dinner"] = ""
-            st.session_state[clear_flag_key] = False
 
         with col_days[idx % 2]:
             with st.container():
                 st.markdown(f"### 🗓️ {day_display_map[day]}")
                 
+                # Action Buttons placed ABOVE the selectboxes so they clear instantly in 1 click
+                btn_col1, btn_col2 = st.columns(2)
+                with btn_col1:
+                    if st.button(f"💾 {t['save_day']}", key=f"save_btn_{day}"):
+                        st.success(f"{day_display_map[day]} added to menu plan!")
+                with btn_col2:
+                    if st.button(f"🧹 {t['clear_day']}", key=f"clear_btn_{day}"):
+                        st.session_state[b_key] = ""
+                        st.session_state[l_key] = ""
+                        st.session_state[d_key] = ""
+                        st.session_state.weekly_plan[day]["Breakfast"] = ""
+                        st.session_state.weekly_plan[day]["Lunch"] = ""
+                        st.session_state.weekly_plan[day]["Dinner"] = ""
+                        st.success(f"Cleared {day_display_map[day]}! Ready for new meals.")
+                        st.rerun()
+
                 if b_key not in st.session_state:
                     st.session_state[b_key] = st.session_state.weekly_plan[day].get("Breakfast", "")
                 if l_key not in st.session_state:
@@ -446,16 +456,6 @@ with tab2:
                 st.session_state.weekly_plan[day]["Breakfast"] = breakfast_choice
                 st.session_state.weekly_plan[day]["Lunch"] = lunch_choice
                 st.session_state.weekly_plan[day]["Dinner"] = dinner_choice
-                
-                # Action Buttons for each day
-                btn_col1, btn_col2 = st.columns(2)
-                with btn_col1:
-                    if st.button(f"💾 {t['save_day']}", key=f"save_btn_{day}"):
-                        st.success(f"{day_display_map[day]} added to menu plan!")
-                with btn_col2:
-                    if st.button(f"🧹 {t['clear_day']}", key=f"clear_btn_{day}"):
-                        st.session_state[clear_flag_key] = True
-                        st.rerun()
                 st.divider()
 
 # --- TAB 3: RECIPE LIBRARY WITH EDITING ---
@@ -526,7 +526,6 @@ with tab3:
                                 cat_idx = CATEGORY_OPTIONS.index(recipe["category"]) if recipe["category"] in CATEGORY_OPTIONS else 0
                                 new_cat = st.selectbox("Category / Type", options=CATEGORY_OPTIONS, index=cat_idx, key=f"cat_{recipe_id}")
                                 
-                                # Parse existing multi-meat defaults
                                 current_meats = [m.strip() for m in recipe["meat"].split(",") if m.strip() in MEAT_OPTIONS]
                                 new_meats = st.multiselect("Meat / Protein", options=MEAT_OPTIONS, default=current_meats, key=f"meat_{recipe_id}")
                                 
@@ -593,7 +592,8 @@ with tab5:
     recipes_list = get_recipes()
     recipe_dict = {r["name"]: r for r in recipes_list}
     
-    shopping_items = []
+    unique_ingredients = []
+    seen = set()
     assigned_count = 0
     
     for day, meals in st.session_state.weekly_plan.items():
@@ -601,14 +601,37 @@ with tab5:
             if r_name and r_name in recipe_dict:
                 assigned_count += 1
                 ing_text = recipe_dict[r_name]["ingredients"]
-                shopping_items.append((day, meal_type, r_name, ing_text))
+                
+                for line in ing_text.split('\n'):
+                    for part in line.split(','):
+                        cleaned = part.strip()
+                        if cleaned and cleaned not in seen:
+                            seen.add(cleaned)
+                            unique_ingredients.append(cleaned)
                 
     if assigned_count == 0:
         st.info(t["no_shopping"])
     else:
-        st.markdown("### 📝 Master Ingredient Checklist")
-        for day, meal_type, r_name, ing_text in shopping_items:
-            display_day = day_display_map.get(day, day)
-            st.markdown(f"**🗓️ {display_day} ({meal_type}) — 🍲 {r_name}**")
-            st.markdown(f"{ing_text}")
-            st.divider()
+        st.markdown("### 📝 Master Deduplicated Shopping Table")
+        
+        html_table = (
+            '<table style="width:100%; border-collapse: collapse; background-color: #ffffff; border: 1px solid #e2e8f0; font-family: sans-serif; border-radius: 8px; overflow: hidden;">'
+            '<thead>'
+            '<tr style="background-color: #f8f9fa; border-bottom: 2px solid #e2e8f0;">'
+            f'<th style="padding: 14px; text-align: center; width: 10%; color: #1e293b; font-weight: bold; border-right: 1px solid #e2e8f0;">{t["tbl_no"]}</th>'
+            f'<th style="padding: 14px; text-align: left; width: 90%; color: #1e293b; font-weight: bold; padding-left: 20px;">{t["tbl_ing"]}</th>'
+            '</tr>'
+            '</thead>'
+            '<tbody>'
+        )
+        
+        for idx, ing in enumerate(unique_ingredients, 1):
+            html_table += (
+                '<tr style="border-bottom: 1px solid #e2e8f0;">'
+                f'<td style="padding: 12px; text-align: center; color: #334155; font-weight: 600; border-right: 1px solid #e2e8f0;">{idx}</td>'
+                f'<td style="padding: 12px; text-align: left; color: #334155; padding-left: 20px;">{ing}</td>'
+                '</tr>'
+            )
+            
+        html_table += '</tbody></table>'
+        st.markdown(html_table, unsafe_allow_html=True)
