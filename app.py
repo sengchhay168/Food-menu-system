@@ -8,6 +8,7 @@ import sqlite3
 
 try:
     import psycopg2
+    import psycopg2.pool
     HAS_PSYCOPG2 = True
 except ImportError:
     HAS_PSYCOPG2 = False
@@ -42,18 +43,37 @@ def q(query):
     """Translate a '?'-style query into '%s'-style for Postgres."""
     return query.replace("?", "%s") if using_postgres() else query
 
+@st.cache_resource
+def get_pg_pool():
+    """
+    A pool of already-open Postgres connections, cached for the life of
+    the app process. Without this, every single database call had to pay
+    for a brand-new network handshake to Supabase (the main cause of the
+    slowdown after switching off local SQLite).
+    """
+    creds = st.secrets["postgres"]
+    return psycopg2.pool.SimpleConnectionPool(
+        1, 5,
+        host=creds["host"],
+        port=creds.get("port", 5432),
+        dbname=creds["dbname"],
+        user=creds["user"],
+        password=creds["password"],
+        sslmode="require",
+    )
+
 def get_connection():
     if using_postgres():
-        creds = st.secrets["postgres"]
-        return psycopg2.connect(
-            host=creds["host"],
-            port=creds.get("port", 5432),
-            dbname=creds["dbname"],
-            user=creds["user"],
-            password=creds["password"],
-            sslmode="require",
-        )
+        return get_pg_pool().getconn()
     return sqlite3.connect("kitchen.db", check_same_thread=False)
+
+def release_connection(conn):
+    """Use instead of conn.close() so pooled Postgres connections go back
+    into the pool for reuse instead of being torn down and reopened."""
+    if using_postgres():
+        get_pg_pool().putconn(conn)
+    else:
+        conn.close()
 
 def init_db():
     conn = get_connection()
@@ -101,18 +121,19 @@ def init_db():
             )
         """)
     conn.commit()
-    conn.close()
+    release_connection(conn)
 
 init_db()
 
 # ---------------- Recipe helpers ----------------
 
+@st.cache_data(ttl=30)
 def get_recipes():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, name, category, meat, difficulty, time, ingredients, image FROM recipes")
     rows = cursor.fetchall()
-    conn.close()
+    release_connection(conn)
     recipes = []
     for row in rows:
         image_bytes = bytes(row[7]) if row[7] is not None else None
@@ -136,7 +157,8 @@ def add_recipe_db(name, category, meat, difficulty, time, ingredients, image):
         VALUES (?, ?, ?, ?, ?, ?, ?)
     """), (name, category, meat, difficulty, time, ingredients, image))
     conn.commit()
-    conn.close()
+    release_connection(conn)
+    get_recipes.clear()
 
 def update_recipe_db(recipe_id, name, category, meat, difficulty, time, ingredients, image):
     conn = get_connection()
@@ -152,7 +174,8 @@ def update_recipe_db(recipe_id, name, category, meat, difficulty, time, ingredie
             WHERE id=?
         """), (name, category, meat, difficulty, time, ingredients, recipe_id))
     conn.commit()
-    conn.close()
+    release_connection(conn)
+    get_recipes.clear()
 
 def delete_recipe_db(recipe_id):
     conn = get_connection()
@@ -161,16 +184,19 @@ def delete_recipe_db(recipe_id):
     # Also clear any weekly plan slots pointing to this recipe
     cursor.execute(q("DELETE FROM weekly_plan WHERE recipe_id=?"), (recipe_id,))
     conn.commit()
-    conn.close()
+    release_connection(conn)
+    get_recipes.clear()
+    get_weekly_plan.clear()
 
 # ---------------- Weekly plan helpers (now backed by the DB, not just session_state) ----------------
 
+@st.cache_data(ttl=30)
 def get_weekly_plan():
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT day, meal_type, recipe_id FROM weekly_plan")
     rows = cursor.fetchall()
-    conn.close()
+    release_connection(conn)
     plan = {day: {m: None for m in MEAL_TYPES} for day in DAYS}
     for day, meal_type, recipe_id in rows:
         if day in plan and meal_type in MEAL_TYPES:
@@ -185,14 +211,16 @@ def set_weekly_meal(day, meal_type, recipe_id):
         cursor.execute(q("INSERT INTO weekly_plan (day, meal_type, recipe_id) VALUES (?, ?, ?)"),
                         (day, meal_type, recipe_id))
     conn.commit()
-    conn.close()
+    release_connection(conn)
+    get_weekly_plan.clear()
 
 def clear_day_db(day):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(q("DELETE FROM weekly_plan WHERE day=?"), (day,))
     conn.commit()
-    conn.close()
+    release_connection(conn)
+    get_weekly_plan.clear()
 
 # ============================================================
 # Professional Custom CSS Styling
