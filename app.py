@@ -127,7 +127,7 @@ init_db()
 
 # ---------------- Recipe helpers ----------------
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=120)
 def get_recipes():
     conn = get_connection()
     cursor = conn.cursor()
@@ -148,6 +148,23 @@ def get_recipes():
             "image": image_bytes,
         })
     return recipes
+
+def compress_image(uploaded_file, max_dim=900, quality=80):
+    """
+    Shrink and re-encode an uploaded photo before it's stored. Phone photos
+    are often several MB each, and every one of those bytes has to travel
+    over the network to/from Supabase on every load — this is usually the
+    single biggest thing slowing the app down once you have several
+    recipes with photos. Resizing to a sensible display size and
+    re-encoding as JPEG typically cuts file size by 80-95%, with no
+    visible quality loss at the sizes this app displays images at.
+    """
+    img = Image.open(uploaded_file)
+    img = img.convert("RGB")  # drop alpha channel; JPEG doesn't support it anyway
+    img.thumbnail((max_dim, max_dim), Image.LANCZOS)
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=quality, optimize=True)
+    return buffer.getvalue()
 
 def add_recipe_db(name, category, meat, difficulty, time, ingredients, image):
     conn = get_connection()
@@ -190,7 +207,7 @@ def delete_recipe_db(recipe_id):
 
 # ---------------- Weekly plan helpers (now backed by the DB, not just session_state) ----------------
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=120)
 def get_weekly_plan():
     conn = get_connection()
     cursor = conn.cursor()
@@ -889,7 +906,7 @@ with tab3:
                                     if not new_name.strip():
                                         st.error(t["error_name"])
                                     else:
-                                        img_bytes = new_image.read() if new_image else None
+                                        img_bytes = compress_image(new_image) if new_image else None
                                         meat_str = ", ".join(new_meats) if new_meats else "None"
                                         update_recipe_db(recipe_id, new_name.strip(), new_cat, meat_str, new_diff, new_time, new_ingredients, img_bytes)
                                         st.success("Recipe updated successfully!")
@@ -940,7 +957,7 @@ with tab4:
 
         if submitted:
             if dish_name.strip():
-                img_bytes = image_file.read() if image_file else None
+                img_bytes = compress_image(image_file) if image_file else None
                 meat_str = ", ".join(meat_types) if meat_types else "None"
                 add_recipe_db(dish_name.strip(), cat_type, meat_str, difficulty, prep_time if prep_time else "Quick", ingredients if ingredients else "Not specified", img_bytes)
                 st.success(f"{t['success_add']} '{dish_name.strip()}'!")
