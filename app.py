@@ -3,6 +3,8 @@ import streamlit.components.v1 as components
 from PIL import Image
 import io
 import html
+import os
+from PIL import ImageDraw, ImageFont
 import datetime
 import sqlite3
 
@@ -165,6 +167,145 @@ def compress_image(uploaded_file, max_dim=900, quality=80):
     buffer = io.BytesIO()
     img.save(buffer, format="JPEG", quality=quality, optimize=True)
     return buffer.getvalue()
+
+# ============================================================
+# Shopping-list image export
+#
+# Renders the shopping list as a shareable PNG (for WhatsApp/Telegram/
+# Messenger) that matches the app's own look. This needs a font file that
+# actually supports Khmer script bundled with the app — the system fonts
+# on Streamlit Cloud don't include Khmer, so without this the text would
+# render as empty boxes. The font lives at assets/KantumruyPro-Variable.ttf
+# alongside this file; make sure that file is committed to your repo too.
+FONT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "NotoSansKhmer-Variable.ttf")
+
+_IMG_INK = (43, 38, 34)
+_IMG_PAPER = (245, 241, 228)
+_IMG_CARD_BG = (255, 253, 248)
+_IMG_ROW_ALT = (251, 247, 238)
+_IMG_HEADER_BG = (237, 230, 211)
+_IMG_GOLD = (198, 138, 61)
+_IMG_BORDER = (218, 209, 189)
+_IMG_NUM_COLOR = (74, 68, 60)
+
+def _get_khmer_font(size, weight=400):
+    font = ImageFont.truetype(FONT_PATH, size)
+    try:
+        # Noto Sans Khmer's variable axes are [Weight, Width] in that order;
+        # 100 keeps the width at its normal (non-condensed) setting.
+        font.set_variation_by_axes([weight, 100])
+    except Exception:
+        pass
+    return font
+
+def _wrap_text(draw, text, font, max_width):
+    words = text.split(" ")
+    lines = []
+    current = ""
+    for word in words:
+        candidate = f"{current} {word}".strip()
+        bbox = draw.textbbox((0, 0), candidate, font=font)
+        if bbox[2] - bbox[0] <= max_width or not current:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    return lines
+
+def generate_shopping_list_image(title, tbl_no_label, tbl_ing_label, ingredients):
+    width = 640
+    margin = 36
+    card_width = width - margin * 2
+    num_col_width = 64
+    text_left_pad = 16
+    text_max_width = card_width - num_col_width - text_left_pad - 16
+
+    title_font = _get_khmer_font(24, 700)
+    header_font = _get_khmer_font(15, 700)
+    row_font = _get_khmer_font(15, 400)
+    num_font = _get_khmer_font(15, 600)
+
+    line_height = 21
+    row_v_pad = 10
+    header_height = 44
+    title_block_height = 66
+
+    dummy_img = Image.new("RGB", (10, 10))
+    dummy_draw = ImageDraw.Draw(dummy_img)
+
+    wrapped_rows = [_wrap_text(dummy_draw, ing, row_font, text_max_width) for ing in ingredients]
+    row_heights = [max(1, len(lines)) * line_height + row_v_pad * 2 for lines in wrapped_rows]
+    card_height = header_height + sum(row_heights)
+    total_height = margin + title_block_height + card_height + margin
+
+    img = Image.new("RGB", (width, total_height), _IMG_PAPER)
+    draw = ImageDraw.Draw(img)
+
+    for x in range(0, width, 18):
+        for y in range(0, total_height, 18):
+            draw.ellipse([x, y, x + 1, y + 1], fill=(231, 225, 208))
+
+    bbox = draw.textbbox((0, 0), title, font=title_font)
+    tw = bbox[2] - bbox[0]
+    draw.text(((width - tw) / 2, margin + 12), title, font=title_font, fill=_IMG_INK)
+
+    card_top = margin + title_block_height
+    card_left = margin
+
+    draw.rounded_rectangle(
+        [card_left, card_top, card_left + card_width, card_top + card_height],
+        radius=14, fill=_IMG_CARD_BG, outline=_IMG_BORDER, width=1
+    )
+    draw.rounded_rectangle(
+        [card_left, card_top, card_left + card_width, card_top + header_height],
+        radius=14, fill=_IMG_HEADER_BG, corners=(True, True, False, False)
+    )
+    draw.rectangle(
+        [card_left, card_top + header_height - 14, card_left + card_width, card_top + header_height],
+        fill=_IMG_HEADER_BG
+    )
+    draw.rectangle(
+        [card_left, card_top + header_height - 2, card_left + card_width, card_top + header_height],
+        fill=_IMG_GOLD
+    )
+    draw.line(
+        [card_left + num_col_width, card_top, card_left + num_col_width, card_top + header_height],
+        fill=_IMG_BORDER, width=1
+    )
+    draw.text((card_left + num_col_width / 2 - 8, card_top + 13), tbl_no_label, font=header_font, fill=_IMG_INK)
+    draw.text((card_left + num_col_width + text_left_pad, card_top + 13), tbl_ing_label, font=header_font, fill=_IMG_INK)
+
+    y = card_top + header_height
+    for idx, lines in enumerate(wrapped_rows, 1):
+        rh = row_heights[idx - 1]
+        row_bg = _IMG_CARD_BG if idx % 2 else _IMG_ROW_ALT
+        draw.rectangle([card_left + 1, y, card_left + card_width - 1, y + rh], fill=row_bg)
+        draw.line([card_left, y + rh, card_left + card_width, y + rh], fill=_IMG_BORDER, width=1)
+        draw.line([card_left + num_col_width, y, card_left + num_col_width, y + rh], fill=(232, 226, 210), width=1)
+
+        num_str = str(idx)
+        nbbox = draw.textbbox((0, 0), num_str, font=num_font)
+        nw = nbbox[2] - nbbox[0]
+        draw.text(
+            (card_left + num_col_width / 2 - nw / 2, y + rh / 2 - (len(lines) * line_height) / 2 + 2),
+            num_str, font=num_font, fill=_IMG_NUM_COLOR
+        )
+
+        text_y = y + row_v_pad
+        for line in lines:
+            draw.text((card_left + num_col_width + text_left_pad, text_y), line, font=row_font, fill=_IMG_INK)
+            text_y += line_height
+
+        y += rh
+
+    draw.rounded_rectangle(
+        [card_left, card_top, card_left + card_width, card_top + card_height],
+        radius=14, outline=_IMG_BORDER, width=1
+    )
+
+    return img
 
 def add_recipe_db(name, category, meat, difficulty, time, ingredients, image):
     conn = get_connection()
@@ -1184,14 +1325,30 @@ with tab5:
     if assigned_count == 0:
         st.info(t["no_shopping"])
     else:
-        print_col1, print_col2 = st.columns([4, 1])
-        with print_col1:
+        # Shareable image (PNG) styled to match the app, for sharing in chats
+        list_image = generate_shopping_list_image(
+            t["shopping_header"], t["tbl_no"], t["tbl_ing"], unique_ingredients
+        )
+        img_buffer = io.BytesIO()
+        list_image.save(img_buffer, format="PNG")
+        img_export = img_buffer.getvalue()
+
+        title_col, img_col, print_col = st.columns([3.4, 1, 1])
+        with title_col:
             st.markdown("### 📝 Master Deduplicated Shopping Table")
-        with print_col2:
+        with img_col:
+            st.download_button(
+                "🖼️ Image",
+                data=img_export,
+                file_name="shopping_list.png",
+                mime="image/png",
+                use_container_width=True,
+            )
+        with print_col:
             components.html("""
-                <div style="text-align:right; padding-top: 8px;">
+                <div style="padding-top: 8px;">
                     <button onclick="window.parent.print()" style="
-                        background-color:#A6553C; color:#FBF8F0; border:none;
+                        width: 100%; background-color:#A6553C; color:#FBF8F0; border:none;
                         border-radius:8px; padding:8px 16px; font-weight:600;
                         font-family:'Kantumruy Pro', sans-serif; cursor:pointer;
                         font-size: 14px;">
