@@ -344,20 +344,54 @@ st.markdown("""
         margin: 0;
     }
 
-    /* ---------- Tabs ---------- */
+    /* ---------- Tabs (modern pill style) ---------- */
+    [data-testid="stTabs"] [role="tablist"],
     [data-baseweb="tab-list"] {
-        gap: 6px;
-        border-bottom: 1px solid rgba(43, 38, 34, 0.12);
+        gap: 4px !important;
+        background-color: var(--panel) !important;
+        border-bottom: none !important;
+        border-radius: 999px !important;
+        padding: 5px !important;
+        display: inline-flex !important;
     }
+    [data-testid="stTabs"] [role="tab"],
+    [data-testid="stTabs"] button[data-baseweb="tab"],
     [data-baseweb="tab"] {
-        font-weight: 600;
-        color: #6B6355;
+        font-weight: 600 !important;
+        color: #6B6355 !important;
+        background-color: transparent !important;
+        border-radius: 999px !important;
+        padding: 8px 18px !important;
+        margin: 0 !important;
+        transition: background-color 0.18s ease, color 0.18s ease !important;
     }
-    [data-baseweb="tab"][aria-selected="true"] {
-        color: var(--terracotta-dark);
+    [data-testid="stTabs"] [role="tab"]:hover,
+    [data-testid="stTabs"] button[data-baseweb="tab"]:hover {
+        color: var(--terracotta-dark) !important;
+    }
+    [data-testid="stTabs"] [role="tab"][aria-selected="true"],
+    [data-testid="stTabs"] button[data-baseweb="tab"][aria-selected="true"] {
+        color: #FBF8F0 !important;
+        background-color: var(--terracotta) !important;
+    }
+    [data-testid="stTabs"] [role="tab"] p,
+    [data-testid="stTabs"] button[data-baseweb="tab"] p {
+        color: inherit !important;
     }
     [data-baseweb="tab-highlight"] {
-        background-color: var(--terracotta) !important;
+        background-color: transparent !important;
+        display: none !important;
+    }
+    [data-baseweb="tab-border"] {
+        background-color: transparent !important;
+        display: none !important;
+    }
+    [data-testid="stTabs"] {
+        border-bottom: none !important;
+    }
+    [data-testid="stTabs"] > div {
+        border-bottom: none !important;
+        box-shadow: none !important;
     }
 
     /* ---------- Buttons ---------- */
@@ -365,25 +399,36 @@ st.markdown("""
         background-color: var(--terracotta);
         color: #FBF8F0;
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         font-weight: 600;
         padding: 0.5rem 1.1rem;
-        transition: background-color 0.15s ease;
+        box-shadow: 0 2px 8px rgba(166, 85, 60, 0.25);
+        transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     }
     div.stButton > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
         background-color: var(--terracotta-dark);
         color: #FBF8F0;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(166, 85, 60, 0.32);
+    }
+    div.stButton > button:active, div[data-testid="stFormSubmitButton"] > button:active {
+        transform: translateY(0);
     }
 
     /* ---------- Recipe cards ---------- */
     .recipe-card {
         background-color: #FFFDF8;
         padding: 24px 26px;
-        border-radius: 10px;
+        border-radius: 16px;
         border: 1px solid rgba(43, 38, 34, 0.08);
         border-left: 4px solid var(--terracotta);
-        box-shadow: 0 2px 10px rgba(43, 38, 34, 0.06);
+        box-shadow: 0 2px 12px rgba(43, 38, 34, 0.06);
         margin-bottom: 20px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .recipe-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(43, 38, 34, 0.1);
     }
     .recipe-card h3 {
         margin-top: 0;
@@ -392,6 +437,30 @@ st.markdown("""
         border: none;
         border-top: 1px solid rgba(43, 38, 34, 0.1);
         margin: 14px 0;
+    }
+
+    /* ---------- Gallery cards (Recipe Library grid) ---------- */
+    .gallery-card {
+        background-color: #FFFDF8;
+        border-radius: 16px;
+        border: 1px solid rgba(43, 38, 34, 0.08);
+        box-shadow: 0 2px 12px rgba(43, 38, 34, 0.06);
+        overflow: hidden;
+        margin-bottom: 22px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .gallery-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 26px rgba(43, 38, 34, 0.12);
+    }
+    .gallery-card__body {
+        padding: 16px 18px 18px 18px;
+    }
+    .gallery-card__title {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--ink);
+        margin: 0 0 8px 0;
     }
 
     /* ---------- Shopping list table (screen size, big/full-width) ---------- */
@@ -544,15 +613,19 @@ st.markdown("""
     [data-testid="stForm"] {
         background-color: #FFFDF8;
         border: 1px solid rgba(43, 38, 34, 0.1);
-        border-radius: 10px;
+        border-radius: 14px;
         padding: 22px 24px 8px 24px;
     }
 
     /* ---------- Bordered containers (weekly planner day cards) ---------- */
     [data-testid="stVerticalBlockBorderWrapper"] {
-        border-radius: 10px !important;
+        border-radius: 14px !important;
         border-color: rgba(43, 38, 34, 0.12) !important;
         background-color: #FFFDF8;
+        transition: box-shadow 0.18s ease;
+    }
+    [data-testid="stVerticalBlockBorderWrapper"]:hover {
+        box-shadow: 0 6px 18px rgba(43, 38, 34, 0.08);
     }
 
     /* ---------- Inputs ---------- */
@@ -963,39 +1036,43 @@ with tab3:
         if not filtered:
             st.warning(t["no_food_msg"])
         else:
-            for recipe in filtered:
-                recipe_id = recipe["id"]
-                with st.container():
-                    st.markdown('<div class="recipe-card">', unsafe_allow_html=True)
-                    rc_col1, rc_col2 = st.columns([1, 3])
+            cols_per_row = 3
+            recipe_rows = [filtered[i:i + cols_per_row] for i in range(0, len(filtered), cols_per_row)]
 
-                    with rc_col1:
+            for recipe_row in recipe_rows:
+                cols = st.columns(cols_per_row)
+                for col, recipe in zip(cols, recipe_row):
+                    recipe_id = recipe["id"]
+                    with col:
+                        st.markdown('<div class="gallery-card">', unsafe_allow_html=True)
+
                         if recipe["image"]:
                             img = Image.open(io.BytesIO(recipe["image"]))
                             st.image(img, use_container_width=True)
                         else:
                             st.markdown(
-                            f'<div class="no-image-box">🍽️<br><span>{html.escape(t["no_image"])}</span></div>',
+                                f'<div class="no-image-box">🍽️<br><span>{html.escape(t["no_image"])}</span></div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        cat_badge = f'<span class="badge-category">🍳 {html.escape(recipe.get("category", "General"))}</span>'
+                        meat_vals = [m.strip() for m in recipe["meat"].split(",") if m.strip()]
+                        meat_badges = "".join([f'<span class="badge-meat">🥩 {html.escape(m)}</span>' for m in meat_vals])
+                        diff_badge = f'<span class="badge-diff-{recipe["difficulty"]}">⚡ {html.escape(recipe["difficulty"])}</span>'
+                        time_badge = f'<span class="badge-time">⏱️ {html.escape(recipe["time"])}</span>'
+
+                        st.markdown(
+                            f'<div class="gallery-card__body">'
+                            f'<p class="gallery-card__title">{html.escape(recipe["name"])}</p>'
+                            f'{cat_badge} {meat_badges} {diff_badge} {time_badge}'
+                            f'</div>',
                             unsafe_allow_html=True,
                         )
 
-                    with rc_col2:
-                        st.markdown(f"### {html.escape(recipe['name'])}")
+                        with st.expander(f"🔍 {t['ingredients']} & edit"):
+                            st.markdown(f"**{t['ingredients']}:**\n{recipe['ingredients']}")
+                            st.markdown("<hr class='recipe-divider' />", unsafe_allow_html=True)
 
-                        cat_badge = f'<span class="badge-category">🍳 {html.escape(recipe.get("category", "General"))}</span>'
-
-                        meat_vals = [m.strip() for m in recipe["meat"].split(",") if m.strip()]
-                        meat_badges = "".join([f'<span class="badge-meat">🥩 {html.escape(m)}</span>' for m in meat_vals])
-
-                        diff_badge = f'<span class="badge-diff-{recipe["difficulty"]}">⚡ {html.escape(recipe["difficulty"])}</span>'
-                        time_badge = f'<span class="badge-time">⏱️ {html.escape(recipe["time"])}</span>'
-                        st.markdown(f"{cat_badge} {meat_badges} {diff_badge} {time_badge}", unsafe_allow_html=True)
-
-                        st.markdown("<hr class='recipe-divider' />", unsafe_allow_html=True)
-                        st.markdown(f"**{t['ingredients']}:**\n{recipe['ingredients']}")
-
-                        # EDIT EXPANDER FOR EACH RECIPE
-                        with st.expander("✏️ Edit Recipe Details"):
                             with st.form(f"edit_form_{recipe_id}"):
                                 new_name = st.text_input("Dish Name", value=recipe["name"])
 
@@ -1024,26 +1101,26 @@ with tab3:
                                         st.success("Recipe updated successfully!")
                                         st.rerun()
 
-                        # --- Delete with confirmation, so a stray tap can't wipe a recipe ---
-                        confirm_key = f"confirm_del_{recipe_id}"
-                        if st.session_state.get(confirm_key):
-                            st.warning(t["confirm_delete"])
-                            dcol1, dcol2 = st.columns(2)
-                            with dcol1:
-                                if st.button(f"✅ {t['yes_delete']}", key=f"yes_del_{recipe_id}"):
-                                    delete_recipe_db(recipe_id)
-                                    st.session_state.pop(confirm_key, None)
+                            # --- Delete with confirmation, so a stray tap can't wipe a recipe ---
+                            confirm_key = f"confirm_del_{recipe_id}"
+                            if st.session_state.get(confirm_key):
+                                st.warning(t["confirm_delete"])
+                                dcol1, dcol2 = st.columns(2)
+                                with dcol1:
+                                    if st.button(f"✅ {t['yes_delete']}", key=f"yes_del_{recipe_id}"):
+                                        delete_recipe_db(recipe_id)
+                                        st.session_state.pop(confirm_key, None)
+                                        st.rerun()
+                                with dcol2:
+                                    if st.button(f"↩️ {t['cancel']}", key=f"cancel_del_{recipe_id}"):
+                                        st.session_state.pop(confirm_key, None)
+                                        st.rerun()
+                            else:
+                                if st.button("🗑️ Delete Recipe", key=f"del_{recipe_id}"):
+                                    st.session_state[confirm_key] = True
                                     st.rerun()
-                            with dcol2:
-                                if st.button(f"↩️ {t['cancel']}", key=f"cancel_del_{recipe_id}"):
-                                    st.session_state.pop(confirm_key, None)
-                                    st.rerun()
-                        else:
-                            if st.button("🗑️ Delete Recipe", key=f"del_{recipe_id}"):
-                                st.session_state[confirm_key] = True
-                                st.rerun()
 
-                    st.markdown('</div>', unsafe_allow_html=True)
+                        st.markdown('</div>', unsafe_allow_html=True)
 
 # --- TAB 4: ADD NEW DISH ---
 with tab4:
