@@ -394,6 +394,63 @@ st.markdown("""
         margin: 14px 0;
     }
 
+    /* ---------- Shopping list table (screen size, big/full-width) ---------- */
+    .shopping-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #FFFDF8;
+        border: 1px solid rgba(43, 38, 34, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .shopping-table thead tr {
+        background-color: #EDE6D3;
+        border-bottom: 2px solid #C68A3D;
+    }
+    .shopping-table th {
+        padding: 14px;
+        text-align: left;
+        color: #2B2622;
+        font-weight: 700;
+    }
+    .shopping-table th:first-child {
+        text-align: center;
+        width: 10%;
+        border-right: 1px solid rgba(43, 38, 34, 0.1);
+    }
+    .shopping-table th:last-child {
+        padding-left: 20px;
+    }
+    .shopping-table td {
+        padding: 12px;
+        color: #2B2622;
+        border-bottom: 1px solid rgba(43, 38, 34, 0.08);
+    }
+    .shopping-table td:first-child {
+        text-align: center;
+        font-weight: 600;
+        color: #4A443C;
+        border-right: 1px solid rgba(43, 38, 34, 0.08);
+    }
+    .shopping-table td:last-child {
+        padding-left: 20px;
+    }
+    .shopping-table tbody tr:nth-child(even) {
+        background-color: #FBF7EE;
+    }
+    .shopping-table tbody tr:nth-child(odd) {
+        background-color: #FFFDF8;
+    }
+
+    /* Title shown only inside the printed shopping list, not on screen
+       (the on-screen page already has its own heading above the table). */
+    .print-only-title {
+        display: none;
+    }
+    .shopping-table-wrap {
+        width: 100%;
+    }
+
     /* ---------- Badges ---------- */
     .badge-category {
         background-color: rgba(63, 93, 69, 0.12);
@@ -509,6 +566,61 @@ st.markdown("""
     textarea:focus {
         border-color: var(--terracotta) !important;
         box-shadow: 0 0 0 1px var(--terracotta) !important;
+    }
+
+    /* ---------- Print: only the shopping list, nothing else ---------- */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        #printable-shopping-list, #printable-shopping-list * {
+            visibility: visible;
+        }
+        #printable-shopping-list {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+        .shopping-table-wrap {
+            max-width: 640px !important;
+            margin: 0 auto !important;
+        }
+        .shopping-table {
+            font-size: 14.5px !important;
+            border-color: rgba(43, 38, 34, 0.18) !important;
+        }
+        .shopping-table th, .shopping-table td {
+            padding: 8px 12px !important;
+        }
+        .print-only-title {
+            display: block !important;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2B2622;
+            text-align: center;
+            margin-bottom: 16px;
+            font-family: 'Kantumruy Pro', sans-serif;
+        }
+        /* These sit above/beside the printable content and reserve blank
+           space even while hidden via visibility, so remove them from the
+           layout entirely instead. */
+        .kitchen-hero,
+        [data-testid="stSidebar"],
+        [data-testid="stHeader"],
+        [data-testid="stToolbar"],
+        [data-baseweb="tab-list"] {
+            display: none !important;
+        }
+        /* Streamlit reserves top padding on its main container regardless
+           of the toolbar's own visibility — zero it out for print. */
+        [data-testid="stAppViewContainer"],
+        [data-testid="stMain"],
+        .main .block-container,
+        [data-testid="block-container"] {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
     }
     </style>
 """, unsafe_allow_html=True)
@@ -995,27 +1107,43 @@ with tab5:
     if assigned_count == 0:
         st.info(t["no_shopping"])
     else:
-        st.markdown("### 📝 Master Deduplicated Shopping Table")
+        print_col1, print_col2 = st.columns([4, 1])
+        with print_col1:
+            st.markdown("### 📝 Master Deduplicated Shopping Table")
+        with print_col2:
+            components.html("""
+                <div style="text-align:right; padding-top: 8px;">
+                    <button onclick="window.parent.print()" style="
+                        background-color:#A6553C; color:#FBF8F0; border:none;
+                        border-radius:8px; padding:8px 16px; font-weight:600;
+                        font-family:'Kantumruy Pro', sans-serif; cursor:pointer;
+                        font-size: 14px;">
+                        🖨️ Print
+                    </button>
+                </div>
+            """, height=50)
 
         html_table = (
-            '<table style="width:100%; border-collapse: collapse; background-color: #FFFDF8; border: 1px solid rgba(43,38,34,0.1); font-family: \'Kantumruy Pro\', sans-serif; border-radius: 10px; overflow: hidden;">'
+            '<div id="printable-shopping-list">'
+            f'<div class="print-only-title">{html.escape(t["shopping_header"])}</div>'
+            '<div class="shopping-table-wrap">'
+            '<table class="shopping-table">'
             '<thead>'
-            '<tr style="background-color: #EDE6D3; border-bottom: 2px solid #C68A3D;">'
-            f'<th style="padding: 14px; text-align: center; width: 10%; color: #2B2622; font-weight: 700; border-right: 1px solid rgba(43,38,34,0.1);">{html.escape(t["tbl_no"])}</th>'
-            f'<th style="padding: 14px; text-align: left; width: 90%; color: #2B2622; font-weight: 700; padding-left: 20px;">{html.escape(t["tbl_ing"])}</th>'
+            '<tr>'
+            f'<th>{html.escape(t["tbl_no"])}</th>'
+            f'<th>{html.escape(t["tbl_ing"])}</th>'
             '</tr>'
             '</thead>'
             '<tbody>'
         )
 
         for idx, ing in enumerate(unique_ingredients, 1):
-            row_bg = "#FFFDF8" if idx % 2 else "#FBF7EE"
             html_table += (
-                f'<tr style="border-bottom: 1px solid rgba(43,38,34,0.08); background-color: {row_bg};">'
-                f'<td style="padding: 12px; text-align: center; color: #4A443C; font-weight: 600; border-right: 1px solid rgba(43,38,34,0.08);">{idx}</td>'
-                f'<td style="padding: 12px; text-align: left; color: #2B2622; padding-left: 20px;">{html.escape(ing)}</td>'
+                '<tr>'
+                f'<td>{idx}</td>'
+                f'<td>{html.escape(ing)}</td>'
                 '</tr>'
             )
 
-        html_table += '</tbody></table>'
+        html_table += '</tbody></table></div></div>'
         st.markdown(html_table, unsafe_allow_html=True)
